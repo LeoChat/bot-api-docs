@@ -8,11 +8,11 @@ LeoBot is a chat-bot engine, specially built to automate insurance related conve
 - Collect analytics.
 - Contact real agents.
 
-Each instance of LeOBot can be customized on demand by the LeOBot team and will be given on-going support. In addition, LeOBot exposes a RESTful API for more abstract needs. An access token and a [Tenant ID](#tenant) need to be obtained in order to access the API and they should be provided with each and every request, e.g.:
+Each instance of LeOBot can be customized on demand by the LeOBot team and will be given on-going support. In addition, LeOBot exposes a REST API for more abstract needs. An access token and a [Tenant](#tenant) ID need to be obtained in order to access the API, and they should be provided with each and every request, like so:
 
     curl -H 'Accept: application/json' -H "Authorization: Bearer {token}" https://bot.meetleo.co/{tenant}/{resource}
 
-Keep in mind that a single Tenant can have multiple tokens, of which permissions can vary (contact the LeOBot team for further information).
+Keep in mind that a single Tenant can have multiple tokens, of which permissions can vary - either it's a master token that can access all information, or it's bound to a specific [Agent](#agent). The API will only serve data which is relevant to the token's belonging Agent. In case of a master token, it's recommended to specify an Agent ID with the `x-leo-agent` header, otherwise all data will be served with no distinction.
 
 ## Docs
 
@@ -21,23 +21,23 @@ The following routes are exposed by the API, grouped by their context:
 - [Agent](#agent)
 
     - [**GET** &nbsp; /agents](#get-agents)
-    - [**GET** &nbsp; /agent/{id}](#get-agentid)
-    - [**PUT** &nbsp; /agent/{id}](#put-agentid)
+    - [**GET** &nbsp; /agents/me](#get-agentsme)
+    - [**PUT** &nbsp; /agents/me](#put-agentsme)
 
 - [Conversation](#conversation)
 
-    - [**GET** &nbsp; /conversations/{agentId}](#get-conversationsagentid)
-    - [**GET** &nbsp; /conversation/{id}](#get-conversationid)
+    - [**GET** &nbsp; /conversations](#get-conversations)
+    - [**GET** &nbsp; /conversations/{id}](#get-conversationsid)
 
 - [Message](#message)
 
-    - [**GET** &nbsp; /messages/{conversationId}](#get-messagesconversationid)
-    - [**GET** &nbsp; /message/{id}](#get-messageid)
+    - [**GET** &nbsp; /conversations/{conversationId}/messages](#get-conversationsconversationidmessages)
+    - [**GET** &nbsp; /conversations/{conversationId}/messages/{id}](#get-conversationsconversationidmessagesid)
 
 - [Event](#event)
 
-    - [**GET** &nbsp; /events/{conversationId}](#get-eventsconversationid)
-    - [**GET** &nbsp; /event/{id}](#get-eventid)
+    - [**GET** &nbsp; /conversations/{conversationId}/events](#get-conversationsconversationidevents)
+    - [**GET** &nbsp; /conversations/{conversationId}/events/{id}](#get-conversationsconversationideventsid)
 
 LeoBot also exposes [Webhooks](#webhooks) to keep track of the following publications:
 
@@ -70,16 +70,25 @@ An Agent represents an instance of a bot that is programmed to handle a specific
 
 #### GET /agents
 
-- **`agents` (Result, Partial [Agent](#agent)[])** - Tenant's Agents, without `conversationsIds`.
+- **`agents` (Result, partial [Agent](#agent)[])** - Tenant's Agents, without `conversationsIds`.
 
-Gets all Agents records listed under the current Tenant, without their correlated Conversations.
+Gets all Agents records listed under the current Tenant, without their correlated Conversations. Most likely relevant only for master tokens.
 
-#### GET /agent/{id}
+#### GET /agents/me
 
-- **`id` (Param, UUID)** - Target Agent ID.
 - **`agent` (Result, [Agent](#agent))** - Target Agent record.
 
-Gets a full Agent record given its ID.
+Gets a full Agent record belonging to the provided token.
+
+#### PUT /agents/me
+
+- **`avatar` (Payload, string, optional)** - The new Agent avatar value.
+- **`name` (Payload, string, optional)** - The new Agent name value.
+- **`description` (Payload, string, optional)** - The new Agent description value.
+- **`theme` (Payload, string, optional)** - The new Agent theme value.
+- **`agent` (Result, partial [Agent](#agent))** - An updated Agent record, without `conversationsIds` field.
+
+Updates and returns an Agent record belonging to the provided token, without its correlated Conversations.
 
 ### Conversation
 
@@ -91,18 +100,17 @@ Gets a full Agent record given its ID.
 
 A Conversation represents an exchange of Messages between the human and the bot. Each Conversation has a very specific set of Event names that can be emitted from it, and it needs to be known in advance. Contact the LeOBot team to get the Events which are relevant to your organization. For more information, see [reference for Event](#event).
 
-#### GET /conversations/{agentId}
+#### GET /conversations
 
-- **`agentId` (Param, UUID)** - Parent Agent ID.
 - **`startedAfter` (Query, DateTime)** - Retrieve all Conversations started after the specified time.
 - **`startedBefore` (Query, DateTime)** - Retrieve all Conversations started before the specified time.
 - **`endedAfter` (Query, DateTime)** - Retrieve all Conversations ended after the specified time.
 - **`endedBefore` (Query, DateTime)** - Retrieve all Conversations ended before the specified time.
-- **`conversations` (Result, Partial [Conversation](#conversation)[])** - Agent's Conversations, without `eventsIds` or `messagesIds`.
+- **`conversations` (Result, partial [Conversation](#conversation)[])** - Agent's Conversations, without `eventsIds` or `messagesIds`.
 
-Gets all Conversations records listed under the given Agent, without their correlated Events or Messages.
+Gets all Conversations records listed under the Agent in context, without their correlated Events or Messages.
 
-#### GET /conversation/{id}
+#### GET /conversations/{id}
 
 - **`id` (Param, UUID)** - Target Conversation ID.
 - **`conversation` (Result, [Conversation](#conversation))** - Target Conversation record.
@@ -113,8 +121,10 @@ Gets a full Conversation record given its ID.
 
 - **`id` (UUID)** - Message ID.
 - **`sentAt` (DateTime)** - The time at which the Message was sent.
-- **`senderRole` (MessageSender)** - Represents the one who sent the message. Can either be `BOT` or `HUMAN`.
-- **`type` (MessageType)** - The type of the message. Can be one of:
+- **`sender` (MessageSender)** - Represents the one who sent the Message:
+    -  *`BOT`* - Represents a Message sent by the bot.
+    -  *`HUMAN`* - Represents a Message sent by a human.
+- **`type` (MessageType)** - The type of the Message:
     - *`TEXT`* - Represents a text Message. If this value is used, the `contents` field will be of type `string`.
     - *`ATTACHMENT`* - Represents a Message bound to an external file URL. If this value is used, the `contents` field will be of type `string`.
     - *`JSON`* - Represents a JSON message. If this value is used, the `contents` field will be of type `JSON`.
@@ -122,7 +132,7 @@ Gets a full Conversation record given its ID.
 
 A Message represents a payload that was sent by a human or a bot throughout a Conversation. Note that a Message doesn't necessarily has to represent text, but can also represent an attachment, or a JSON (see `type` field).
 
-#### GET /messages/{conversationId}
+#### GET /conversations/{conversationId}/messages
 
 - **`conversationId` (Param, UUID)** - Parent Conversation ID.
 - **`sentAfter` (Query, DateTime)** - Retrieve only Messages that were sent after the specified time.
@@ -133,8 +143,9 @@ A Message represents a payload that was sent by a human or a bot throughout a Co
 
 Gets all Messages records listed under the given Conversation.
 
-#### GET /message/{id}
+#### GET /conversations/{conversationId}/messages/{id}
 
+- **`conversationId` (Param, UUID)** - Parent Conversation ID.
 - **`id` (Param, UUID)** - Target Message ID.
 
 Gets a full Message record given its ID.
@@ -148,18 +159,19 @@ Gets a full Message record given its ID.
 
 An Event object represents a piece of an information that was emitted throughout the Conversation at a specific time so we can have more information about the Conversation's progress, e.g. when did a specific dialog start, what information did the user provide us with, etc. Events are mostly useful when used with [Webhooks](#webhook).
 
-#### GET /events/{conversationId}
+#### GET /conversations/{conversationId}/events
 
 - **`conversationId` (Param, UUID)** - Parent Conversation ID.
 - **`emittedAfter` (Query, DateTime)** - Retrieve only Messages that were emitted after the specified time.
 - **`emittedBefore` (Query, DateTime)** - Retrieve only Messages that were emitted before the specified time.
 - **`events` (Result, [Message](#message)[])** - Conversation's Events.
 
-Gets all Events records listed under the given Conversation.
+Gets all Events records listed under the Agent in context.
 
-#### GET /event/{id}
+#### GET /conversations/{conversationId}/events/{id}
 
 - **`id` (Param, UUID)** - Target Event ID.
+- **`conversationId` (Param, UUID)** - Parent Conversation ID.
 
 Gets a full Event record given its ID.
 
@@ -167,9 +179,9 @@ Gets a full Event record given its ID.
 
 You can subscribe to Webhooks with the following endpoints.
 
-- [**POST** &nbsp; /webhook/{id}]() - Registers a new subscription.
-- [**DELETE** &nbsp; /webhook/{id}]() - Deletes a subscription.
-- [**PUT** &nbsp; /webhook/{id}]() - Updates a subscription.
+- [**POST** &nbsp; /webhook/{id}](#webhooks) - Registers a new subscription.
+- [**DELETE** &nbsp; /webhook/{id}](#webhooks) - Deletes a subscription.
+- [**PUT** &nbsp; /webhook/{id}](#webhooks) - Updates a subscription.
 
 A payload must be provided and will always contain:
 
@@ -181,14 +193,14 @@ With Webhooks you can subscribe to the following publications:
 #### conversationStarted(agentId)
 
 - **`agentId` (Payload, UUID)** - Parent Agent ID.
-- **`conversation` (Result, Partial Conversation)** - Target Conversation, without `eventsIds` or `messagesIds`.
+- **`conversation` (Result, partial Conversation)** - Published Conversation, without `eventsIds` or `messagesIds`.
 
 Published each time a new Conversation with the given Agent was started.
 
 #### conversationEnded(agentId)
 
 - **`agentId` (Payload, UUID)** - Parent Agent ID.
-- **`conversation` (Result, Partial [Conversation](#conversation))** - Published Conversation, without `eventsIds` or `messagesIds`.
+- **`conversation` (Result, partial [Conversation](#conversation))** - Published Conversation, without `eventsIds` or `messagesIds`.
 
 Published each time a Conversation with the given Agent was ended.
 
@@ -197,7 +209,7 @@ Published each time a Conversation with the given Agent was ended.
 - **`conversationId` (Payload, UUID)** - Parent Conversation ID.
 - **`message` (Result, [Message](#message))** - Published Message.
 
-Published each time a Message was sent in the given Conversation.
+Published each time a Message was sent throughout the given Conversation.
 
 #### eventEmitted(conversationId)
 
