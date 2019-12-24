@@ -10,9 +10,9 @@ LeoBot is a chat-bot engine, specially built to automate insurance related conve
 
 Each instance of LeOBot can be customized on demand by the LeOBot team and will be given on-going support. In addition, LeOBot exposes a REST API for more abstract needs. An access token and a [Tenant](#tenant) ID need to be obtained in order to access the API, and they should be provided with each and every request, like so:
 
-    curl -H 'Accept: application/json' -H "Authorization: Bearer {token}" https://bot.meetleo.co/{tenant}/{resource}
+    curl -H "Accept: application/json" -H "Content-Type: application/json" -H "Authorization: Bearer {token}" https://bot.meetleo.co/{tenantId}/{resource}
 
-Keep in mind that a single Tenant can have multiple tokens, of which permissions can vary - either it's a master token that can access all information, or it's bound to a specific [Agent](#agent). The API will only serve data which is relevant to the token's belonging Agent. In case of a master token, it's recommended to specify an Agent ID with the `x-leo-agent` header, otherwise all data will be served with no distinction.
+Request/response payload is assumed to be in JSON format. Keep in mind that a single Tenant can have multiple tokens, of which permissions can vary - either it's a master token that can access all information, or it's bound to a specific [Agent](#agent). The API will only serve data which is relevant to the token's belonging Agent. In case of a master token, it's recommended to specify an Agent ID with the `x-leo-agent` header, otherwise all data will be served with no distinction.
 
 ## Docs
 
