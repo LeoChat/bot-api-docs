@@ -72,14 +72,14 @@ An Agent represents an instance of a bot that is programmed to handle a specific
 
 - **`agents` (Result, Partial [Agent](#agent)[])** - Tenant's Agents, without `conversationsIds`.
 
-Gets all Agents records listed under the current Tenant, without their correlated Conversations.
+Gets all Agents records listed under the current Tenant, without their correlated Conversations. (Available only with "master" access token.
 
-#### GET /agent/{id}
+#### GET /agents/{id}
 
 - **`id` (Param, UUID)** - Target Agent ID.
 - **`agent` (Result, [Agent](#agent))** - Target Agent record.
 
-Gets a full Agent record given its ID.
+Gets a full Agent record given its ID. (Available only with "master" access token.
 
 ### Conversation
 
@@ -91,7 +91,7 @@ Gets a full Agent record given its ID.
 
 A Conversation represents an exchange of Messages between the human and the bot. Each Conversation has a very specific set of Event names that can be emitted from it, and it needs to be known in advance. Contact the LeOBot team to get the Events which are relevant to your organization. For more information, see [reference for Event](#event).
 
-#### GET /conversations/{agentId}
+#### GET /conversations
 
 - **`agentId` (Param, UUID)** - Parent Agent ID.
 - **`startedAfter` (Query, DateTime)** - Retrieve all Conversations started after the specified time.
@@ -100,9 +100,9 @@ A Conversation represents an exchange of Messages between the human and the bot.
 - **`endedBefore` (Query, DateTime)** - Retrieve all Conversations ended before the specified time.
 - **`conversations` (Result, Partial [Conversation](#conversation)[])** - Agent's Conversations, without `eventsIds` or `messagesIds`.
 
-Gets all Conversations records listed under the given Agent, without their correlated Events or Messages.
+Gets all Conversations records listed under the agent of the token, without their correlated Events or Messages.
 
-#### GET /conversation/{id}
+#### GET /conversations/{id}
 
 - **`id` (Param, UUID)** - Target Conversation ID.
 - **`conversation` (Result, [Conversation](#conversation))** - Target Conversation record.
@@ -122,7 +122,7 @@ Gets a full Conversation record given its ID.
 
 A Message represents a payload that was sent by a human or a bot throughout a Conversation. Note that a Message doesn't necessarily has to represent text, but can also represent an attachment, or a JSON (see `type` field).
 
-#### GET /messages/{conversationId}
+#### GET /conversations/{conversationId}/messages
 
 - **`conversationId` (Param, UUID)** - Parent Conversation ID.
 - **`sentAfter` (Query, DateTime)** - Retrieve only Messages that were sent after the specified time.
@@ -133,9 +133,10 @@ A Message represents a payload that was sent by a human or a bot throughout a Co
 
 Gets all Messages records listed under the given Conversation.
 
-#### GET /message/{id}
+#### GET /conversations/{conversationId}/messages/{id}
 
 - **`id` (Param, UUID)** - Target Message ID.
+- **`conversationId` (Param, UUID)** - Target Conversation ID.
 
 Gets a full Message record given its ID.
 
@@ -148,7 +149,7 @@ Gets a full Message record given its ID.
 
 An Event object represents a piece of an information that was emitted throughout the Conversation at a specific time so we can have more information about the Conversation's progress, e.g. when did a specific dialog start, what information did the user provide us with, etc. Events are mostly useful when used with [Webhooks](#webhook).
 
-#### GET /events/{conversationId}
+#### GET /conversations/{conversationId}/events
 
 - **`conversationId` (Param, UUID)** - Parent Conversation ID.
 - **`emittedAfter` (Query, DateTime)** - Retrieve only Messages that were emitted after the specified time.
@@ -157,9 +158,10 @@ An Event object represents a piece of an information that was emitted throughout
 
 Gets all Events records listed under the given Conversation.
 
-#### GET /event/{id}
+#### GET /conversations/{conversationId}/events/{id}
 
 - **`id` (Param, UUID)** - Target Event ID.
+- **`conversationId` (Param, UUID)** - Target Conversation ID.
 
 Gets a full Event record given its ID.
 
