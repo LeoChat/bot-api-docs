@@ -126,7 +126,7 @@ Gets a full Conversation record given its ID.
     -  *`HUMAN`* - Represents a Message sent by a human.
 - **`type` (MessageType)** - The type of the Message:
     - *`TEXT`* - Represents a text Message. If this value is used, the `contents` field will be of type `string`.
-    - *`ATTACHMENT`* - Represents a Message bound to an external file URL. If this value is used, the `contents` field will be of type `string`.
+    - *`ATTACHMENT`* - Represents a Message bound to an external file URI. If this value is used, the `contents` field will be of type `string`.
     - *`JSON`* - Represents a JSON message. If this value is used, the `contents` field will be of type `JSON`.
 - **`contents` (string | JSON)** - The contents of the Message whose type will change according to the `type` field.
 
@@ -137,7 +137,7 @@ A Message represents a payload that was sent by a human or a bot throughout a Co
 - **`conversationId` (Param, UUID)** - Parent Conversation ID.
 - **`sentAfter` (Query, DateTime)** - Retrieve only Messages that were sent after the specified time.
 - **`sentBefore` (Query, DateTime)** - Retrieve only Messages that were sent before the specified time.
-- **`senderRole` (Query, MessageSender)** - Retrieve only Messages which were sent by the specified sender.
+- **`sender` (Query, MessageSender)** - Retrieve only Messages which were sent by the specified sender.
 - **`types` (Query, MessageType[])** - Retrieve only Messages of the given types.
 - **`messages` (Result, [Message](#message)[])** - Conversation's Messages.
 
@@ -157,16 +157,16 @@ Gets a full Message record given its ID.
 - **`emittedAt` (DateTime)** - The time at which the Event was emitted throughout the conversation.
 - **`payload` (JSON, optional)** - The payload bound to the Event when it was emitted.
 
-An Event object represents a piece of an information that was emitted throughout the Conversation at a specific time so we can have more information about the Conversation's progress, e.g. when did a specific dialog start, what information did the user provide us with, etc. Events are mostly useful when used with [Webhooks](#webhook).
+An Event object represents a piece of an information that was emitted throughout the Conversation at a specific time to inform us about the Conversation's progress, e.g. when did a specific dialog start, what address did the user provide us with, etc. Events are mostly useful when used with [Webhooks](#webhook).
 
 #### GET /conversations/{conversationId}/events
 
 - **`conversationId` (Param, UUID)** - Parent Conversation ID.
 - **`emittedAfter` (Query, DateTime)** - Retrieve only Messages that were emitted after the specified time.
 - **`emittedBefore` (Query, DateTime)** - Retrieve only Messages that were emitted before the specified time.
-- **`events` (Result, [Message](#message)[])** - Conversation's Events.
+- **`events` (Result, [Event](#event)[])** - Conversation's Events.
 
-Gets all Events records listed under the Agent in context.
+Gets all Events records listed under the given Conversation.
 
 #### GET /conversations/{conversationId}/events/{id}
 
@@ -177,7 +177,7 @@ Gets a full Event record given its ID.
 
 ## Webhooks
 
-You can subscribe to Webhooks with the following endpoints.
+You can subscribe to Webhooks with the following endpoints:
 
 - [**POST** &nbsp; /webhook/{id}](#webhooks) - Registers a new subscription.
 - [**DELETE** &nbsp; /webhook/{id}](#webhooks) - Deletes a subscription.
@@ -195,14 +195,14 @@ With Webhooks you can subscribe to the following publications:
 - **`agentId` (Payload, UUID)** - Parent Agent ID.
 - **`conversation` (Result, partial Conversation)** - Published Conversation, without `eventsIds` or `messagesIds`.
 
-Published each time a new Conversation with the given Agent was started.
+Published each time a new Conversation with the given Agent has started.
 
 #### conversationEnded(agentId)
 
 - **`agentId` (Payload, UUID)** - Parent Agent ID.
 - **`conversation` (Result, partial [Conversation](#conversation))** - Published Conversation, without `eventsIds` or `messagesIds`.
 
-Published each time a Conversation with the given Agent was ended.
+Published each time a Conversation with the given Agent has ended.
 
 #### messageSent(conversationId)
 
